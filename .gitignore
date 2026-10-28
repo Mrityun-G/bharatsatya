@@ -25,3 +25,7 @@ client/node_modules/
 
 # Local tool logs
 logs/
+
+# Python bytecode
+__pycache__/
+*.pyc
