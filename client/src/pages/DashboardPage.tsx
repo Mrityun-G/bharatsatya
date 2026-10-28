@@ -262,19 +262,20 @@ export const DashboardPage: React.FC = () => {
                   <div className="gov-audit-meta">
                     <span className="gov-audit-action">{audit.action?.replace(/_/g, ' ')}</span>
                     <span className="gov-audit-time">
-                      {new Date(audit.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(audit.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <div className="gov-audit-desc">
-                    {audit.applicationId && (
-                      <Link to={`/applications/${audit.applicationId}`} className="gov-audit-app-ref">
-                        [{audit.applicationId}]
+                    {audit.entityType === 'Application' ? (
+                      <Link to={`/applications/${audit.entityId}`} className="gov-audit-app-ref">
+                        [{audit.entityId}]
                       </Link>
-                    )}{' '}
-                    {audit.details || 'Scrutiny record entered.'}
+                    ) : (
+                      <span>{audit.entityType} record</span>
+                    )}
                   </div>
                   <div className="gov-audit-actor">
-                    <span>Officer: {audit.user?.name || 'Automated Scrutiny Engine'}</span>
+                    <span>By: {audit.actorName || 'Automated Scrutiny Engine'}{audit.actorRole ? ` (${audit.actorRole.toLowerCase()})` : ''}</span>
                   </div>
                 </div>
               ))

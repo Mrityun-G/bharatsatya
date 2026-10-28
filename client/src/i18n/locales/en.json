@@ -74,7 +74,9 @@
     "inspectDossier": "Inspect Dossier",
     "exportDossier": "Export Validation Dossier",
     "rerunScrutiny": "Rerun Compliance Scrutiny",
-    "evaluatingRules": "Evaluating Rules..."
+    "evaluatingRules": "Evaluating Rules...",
+    "view": "View",
+    "viewAll": "View all"
   },
   "status": {
     "SUBMITTED": "Submitted",
@@ -135,7 +137,9 @@
     "auditAction": "Action Type",
     "auditDetails": "Audit Details",
     "auditActor": "Actor",
-    "unassigned": "Unassigned Pool"
+    "unassigned": "Unassigned Pool",
+    "recentApplications": "Recent Institutional Filings & Scrutiny Cases",
+    "recentAuditEvents": "Recent Regulatory Audit Events & Traceability Log"
   },
   "applications": {
     "breadcrumb": "Institutional Applications Registry",
@@ -165,7 +169,14 @@
       "remarksPlaceholder": "Enter specific application particulars or Extension of Approval (EOA) context...",
       "registering": "Registering Application...",
       "registerBtn": "Register Application"
-    }
+    },
+    "modalTitle": "Register New Application",
+    "modalInstitution": "Institution",
+    "modalCategory": "Application Category",
+    "modalAcademicYear": "Academic Year",
+    "modalRemarks": "Remarks",
+    "modalRemarksPlaceholder": "Optional notes for the scrutiny officer",
+    "modalSubmit": "Create Application"
   },
   "applicationDetail": {
     "breadcrumbApps": "Applications",
