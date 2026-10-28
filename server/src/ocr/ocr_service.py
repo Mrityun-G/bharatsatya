@@ -357,6 +357,33 @@ def extract_fields_from_pages(page_data, doc_type, fitz_doc=None):
                 })
                 found_field_names.add('VALIDITY_STATUS')
 
+        # Floor-plan areas (m²) feeding the infrastructure norm rules
+        if doc_type == 'FLOOR_PLAN':
+            for field_name, field_label, label_pattern in (
+                ('LIBRARY_AREA_SQM', 'Library and Reading Room Area (m²)', r'Library|Reading\s*Room'),
+                ('CLASSROOM_AREA_SQM', 'Total Classroom Area (m²)', r'Class\s*rooms?'),
+            ):
+                if field_name in found_field_names:
+                    continue
+                area_match = re.search(
+                    r'(?:' + label_pattern + r')[^\n\d]{0,40}?(\d[\d,]*(?:\.\d+)?)\s*(?:sq\.?\s*m|sqm|m2|m²|square\s*met)',
+                    text,
+                    re.IGNORECASE
+                )
+                if area_match:
+                    coords = get_field_coordinates(fitz_doc, page_num, area_match.group(0))
+                    fields.append({
+                        'fieldName': field_name,
+                        'fieldLabel': field_label,
+                        'fieldValue': area_match.group(1).replace(',', ''),
+                        'originalExtractedValue': area_match.group(0),
+                        'confidence': page_conf,
+                        'evidencePage': page_num,
+                        'evidenceSnippet': area_match.group(0),
+                        'evidenceCoordinates': coords,
+                    })
+                    found_field_names.add(field_name)
+
     return fields
 
 def extract_fields(text, doc_type):
