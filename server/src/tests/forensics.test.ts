@@ -95,3 +95,23 @@ describe('institution name extraction (Node fallback)', () => {
     expect(nameOf('Certificate No: NOC/2026/01')).toBeUndefined();
   });
 });
+
+describe('mandatory field rule scoping', () => {
+  const rule = (config: object) => ({
+    id: 'rule-mf', code: 'RULE-MF-TEST', title: 'Mandatory fields', description: 'Synthetic', category: 'ALL',
+    ruleType: 'MANDATORY_FIELD_CHECK', severity: 'MAJOR', isActive: true, version: 1, logicConfigJson: '{}',
+    versions: [{ id: 'v1', version: 1, logicConfigJson: JSON.stringify({ requiredFields: ['REGISTRATION_REF_NO'], ...config }) }],
+  });
+  const doc = (documentType: string, ref?: string) => ({ documentType, originalName: `${documentType}.pdf`, fileHashSha256: documentType, extractedFields: ref ? [{ fieldName: 'REGISTRATION_REF_NO', fieldValue: ref }] : [] });
+  const app = { id: 'synthetic', category: 'ENGINEERING_TECH', institution: { name: 'Example' }, documents: [doc('FIRE_SAFETY_NOC', 'NOC/1'), doc('FLOOR_PLAN'), doc('FDR_FINANCIAL_ENDOWMENT')] };
+
+  it('checks every document when unscoped', async () => {
+    mocks.applicationFindUnique.mockResolvedValue(app); mocks.rulesFindMany.mockResolvedValue([rule({})]);
+    const findings = await evaluateApplicationCompliance('synthetic');
+    expect(findings.filter((f) => f.status === 'MISSING')).toHaveLength(2);
+  });
+  it('checks only the listed document types when documentTypes is set', async () => {
+    mocks.applicationFindUnique.mockResolvedValue(app); mocks.rulesFindMany.mockResolvedValue([rule({ documentTypes: ['FIRE_SAFETY_NOC', 'OCCUPANCY_CERTIFICATE'] })]);
+    await expect(evaluateApplicationCompliance('synthetic')).resolves.toMatchObject([{ status: 'PASSED' }]);
+  });
+});

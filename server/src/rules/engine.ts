@@ -246,11 +246,13 @@ export async function evaluateApplicationCompliance(applicationId: string): Prom
     }
 
     if (rule.ruleType === 'MANDATORY_FIELD_CHECK') {
+      // Scope with documentType (one type) or documentTypes (several); neither means every document.
       const type = config.documentType;
+      const types = asStringList(config.documentTypes);
       const requiredFields = asStringList(config.requiredFields || ['REGISTRATION_REF_NO', 'ISSUING_AUTHORITY']);
-      const targetDocs = docs.filter((d) => !type || d.documentType === type);
+      const targetDocs = docs.filter((d) => (types.length ? types.includes(d.documentType) : !type || d.documentType === type));
       if (!targetDocs.length) {
-        output.push(result(rule, snapshot.id, 'MISSING', `Target document ${type || 'required'} is not yet uploaded for field completeness check.`, {
+        output.push(result(rule, snapshot.id, 'MISSING', `Target document ${type || types.join(' / ') || 'required'} is not yet uploaded for field completeness check.`, {
           documentType: type,
           recommendedNextAction: 'Upload the required statutory dossier before evaluating field completeness.',
         }));
