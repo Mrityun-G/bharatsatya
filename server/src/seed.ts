@@ -1,23 +1,20 @@
-import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { prisma } from './prisma.js';
 import { assertRuntimeMatchesTestDatabase } from './config/testDatabaseSafety.js';
+import { getDocumentStorage } from './storage/provider.js';
+import { raiseAlerts, alertsFromFindings } from './services/alerts.js';
 
 dotenv.config();
 
-const uploadsDir = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-function createSampleDocFile(filename: string, content: string): { storageKey: string; hash: string; size: number } {
+// Sample files go through the configured private storage provider: the local uploads
+// folder in development, or the private S3-compatible bucket for a hosted demo.
+async function createSampleDocFile(filename: string, content: string): Promise<{ storageKey: string; hash: string; size: number }> {
   const storageKey = `${crypto.randomUUID()}${path.extname(filename).toLowerCase() || '.pdf'}`;
-  const filePath = path.join(uploadsDir, storageKey);
-  fs.writeFileSync(filePath, content, 'utf-8');
-  const buffer = fs.readFileSync(filePath);
+  const buffer = Buffer.from(content, 'utf-8');
+  await getDocumentStorage().put(storageKey, buffer, 'application/pdf');
   const hash = crypto.createHash('sha256').update(buffer).digest('hex');
   return { storageKey, hash, size: buffer.length };
 }
@@ -25,7 +22,10 @@ function createSampleDocFile(filename: string, content: string): { storageKey: s
 async function main() {
   console.log('[BharatSatya Seed] Initializing synthetic regulatory database...');
 
-  assertRuntimeMatchesTestDatabase();
+  // SEED_TARGET=live-demo loads the same synthetic records into a freshly migrated hosted
+  // database for a public demonstration. The ALLOW_SYNTHETIC_SEED and empty-database
+  // checks below still apply, so it can never write into a database already in use.
+  if (process.env.SEED_TARGET !== 'live-demo') assertRuntimeMatchesTestDatabase();
 
   if (process.env.ALLOW_SYNTHETIC_SEED !== 'true') {
     throw new Error('Synthetic seeding requires ALLOW_SYNTHETIC_SEED=true as an explicit disposable-database safeguard.');
@@ -382,12 +382,12 @@ async function main() {
     },
   });
 
-  const land1 = createSampleDocFile('vjit_land_deed.pdf', 'REGISTERED LAND TITLE DEED\nInstitution Name: Vidya Jyothi Institute of Technology\nSurvey No: 48/1A, 48/2\nArea measuring 5.25 Acres in clear unencumbered possession\nSub-Registrar Office Hyderabad 1998');
-  const fire1 = createSampleDocFile('vjit_fire_noc.pdf', 'STATE DISASTER RESPONSE & FIRE SERVICES DEPARTMENT\nCertificate No: NOC/FIRE/HYD/2024/8812\nInstitution Name: Vidya Jyothi Institute of Technology\nValid Up To: 2027-08-31\nOperational hydrant and emergency exits verified.');
-  const bld1 = createSampleDocFile('vjit_building_plan.pdf', 'GREATER HYDERABAD MUNICIPAL CORPORATION\nSanction Order No: GHMC/BP/1092/2019\nApproval Date: 2019-04-12\nApproved Institutional Campus Built-up Area 28,450 sq.m.');
-  const occ1 = createSampleDocFile('vjit_occupancy_cert.pdf', 'OCCUPANCY CERTIFICATE GHMC\nCertificate No: OC/9912/GHMC\nInstitution: Vidya Jyothi Institute of Technology\nCertified structurally sound and fit for educational occupancy.');
-  const soc1 = createSampleDocFile('vjit_society_reg.pdf', 'REGISTRAR OF SOCIETIES TELANGANA\nReg No: 1402/1997\nSociety Name: Vidya Jyothi Educational Society\nRegistered Office: Hyderabad.');
-  const fdr1 = createSampleDocFile('vjit_fdr_receipt.pdf', 'STATE BANK OF INDIA - FIXED DEPOSIT RECEIPT\nJoint Account: Regional Officer AICTE and Vidya Jyothi Educational Society\nPrincipal Sum of INR 1,50,00,000 (One Crore Fifty Lakhs Only)\nMaturity Date: 2031-03-31');
+  const land1 = await createSampleDocFile('vjit_land_deed.pdf', 'REGISTERED LAND TITLE DEED\nInstitution Name: Vidya Jyothi Institute of Technology\nSurvey No: 48/1A, 48/2\nArea measuring 5.25 Acres in clear unencumbered possession\nSub-Registrar Office Hyderabad 1998');
+  const fire1 = await createSampleDocFile('vjit_fire_noc.pdf', 'STATE DISASTER RESPONSE & FIRE SERVICES DEPARTMENT\nCertificate No: NOC/FIRE/HYD/2024/8812\nInstitution Name: Vidya Jyothi Institute of Technology\nValid Up To: 2027-08-31\nOperational hydrant and emergency exits verified.');
+  const bld1 = await createSampleDocFile('vjit_building_plan.pdf', 'GREATER HYDERABAD MUNICIPAL CORPORATION\nSanction Order No: GHMC/BP/1092/2019\nApproval Date: 2019-04-12\nApproved Institutional Campus Built-up Area 28,450 sq.m.');
+  const occ1 = await createSampleDocFile('vjit_occupancy_cert.pdf', 'OCCUPANCY CERTIFICATE GHMC\nCertificate No: OC/9912/GHMC\nInstitution: Vidya Jyothi Institute of Technology\nCertified structurally sound and fit for educational occupancy.');
+  const soc1 = await createSampleDocFile('vjit_society_reg.pdf', 'REGISTRAR OF SOCIETIES TELANGANA\nReg No: 1402/1997\nSociety Name: Vidya Jyothi Educational Society\nRegistered Office: Hyderabad.');
+  const fdr1 = await createSampleDocFile('vjit_fdr_receipt.pdf', 'STATE BANK OF INDIA - FIXED DEPOSIT RECEIPT\nJoint Account: Regional Officer AICTE and Vidya Jyothi Educational Society\nPrincipal Sum of INR 1,50,00,000 (One Crore Fifty Lakhs Only)\nMaturity Date: 2031-03-31');
 
   // Documents for App 1
   const docLand1 = await prisma.document.create({
@@ -582,7 +582,7 @@ async function main() {
     },
   });
 
-  const land2 = createSampleDocFile('kims_land_deed.pdf', 'REGISTERED LEASE DEED\nInstitution Name: Kalinga Institute of Management Studies\nArea measuring 2.10 Acres\nBhubaneswar Development Authority.');
+  const land2 = await createSampleDocFile('kims_land_deed.pdf', 'REGISTERED LEASE DEED\nInstitution Name: Kalinga Institute of Management Studies\nArea measuring 2.10 Acres\nBhubaneswar Development Authority.');
   await prisma.document.create({
     data: {
       applicationId: app2.id,
@@ -615,7 +615,7 @@ async function main() {
     },
   });
 
-  const fire3 = createSampleDocFile('saraswati_fire_expired.pdf', 'MAHARASHTRA FIRE SERVICES DIRECTORATE\nCertificate No: NOC/PUNE/2023/1029\nInstitution: Saraswati College of Pharmacy\nValid Up To: 2025-12-31\nAnnual mock drill pending.');
+  const fire3 = await createSampleDocFile('saraswati_fire_expired.pdf', 'MAHARASHTRA FIRE SERVICES DIRECTORATE\nCertificate No: NOC/PUNE/2023/1029\nInstitution: Saraswati College of Pharmacy\nValid Up To: 2025-12-31\nAnnual mock drill pending.');
   const docFire3 = await prisma.document.create({
     data: {
       applicationId: app3.id,
@@ -660,8 +660,8 @@ async function main() {
     },
   });
 
-  const land4 = createSampleDocFile('nalanda_land.pdf', 'DEED OF CONVEYANCE\nInstitution Name: Nalanda Foundation for Higher Learning\nSurvey No: 91/B\nArea: 1.85 Acres.');
-  const soc4 = createSampleDocFile('nalanda_soc.pdf', 'REGISTRATION OF SOCIETIES BIHAR\nReg No: 409/2014\nSociety Name: Magadh Educational Trust Society\nPatna.');
+  const land4 = await createSampleDocFile('nalanda_land.pdf', 'DEED OF CONVEYANCE\nInstitution Name: Nalanda Foundation for Higher Learning\nSurvey No: 91/B\nArea: 1.85 Acres.');
+  const soc4 = await createSampleDocFile('nalanda_soc.pdf', 'REGISTRATION OF SOCIETIES BIHAR\nReg No: 409/2014\nSociety Name: Magadh Educational Trust Society\nPatna.');
 
   const docLand4 = await prisma.document.create({
     data: {
@@ -735,8 +735,8 @@ async function main() {
   });
 
   const dupContent = 'MUNICIPAL TOWN PLANNING SANCTION ORDER\nNagpur Municipal Corporation Order No 4402/2018\nIdentical Byte Level Content';
-  const dupFile1 = createSampleDocFile('ambedkar_bld.pdf', dupContent);
-  const dupFile2 = createSampleDocFile('ambedkar_occ_duplicate.pdf', dupContent); // exact duplicate bytes
+  const dupFile1 = await createSampleDocFile('ambedkar_bld.pdf', dupContent);
+  const dupFile2 = await createSampleDocFile('ambedkar_occ_duplicate.pdf', dupContent); // exact duplicate bytes
 
   await prisma.document.create({
     data: {
@@ -770,6 +770,44 @@ async function main() {
     },
   });
 
+  // Infrastructure evidence: measured floor-plan areas feed the INFRASTRUCTURE_NORM rules.
+  const floorPlans: [string, string, string, string][] = [
+    [app1.id, 'vjit_floor_plan.pdf', '462', '410'],
+    [app4.id, 'app4_floor_plan.pdf', '462', '148'],
+  ];
+  for (const [applicationId, fileName, classroomSqm, librarySqm] of floorPlans) {
+    const plan = await createSampleDocFile(fileName, `FLOOR PLAN - ACADEMIC BLOCK A
+Classrooms total carpet area ${classroomSqm} sq.m
+Library and Reading Room area ${librarySqm} sq.m
+Scale 1:100`);
+    const planDoc = await prisma.document.create({
+      data: {
+        applicationId, documentType: 'FLOOR_PLAN', title: 'Academic Block Floor Plan',
+        fileName: plan.storageKey, originalName: 'Floor_Plan_Academic_Block_A.pdf', mimeType: 'application/pdf',
+        fileSizeBytes: plan.size, fileHashSha256: plan.hash, storagePath: plan.storageKey, status: 'EXTRACTED',
+      },
+    });
+    for (const [fieldName, fieldLabel, fieldValue, evidenceSnippet] of [
+      ['CLASSROOM_AREA_SQM', 'Total Classroom Area (m²)', classroomSqm, `Classrooms total carpet area ${classroomSqm} sq.m`],
+      ['LIBRARY_AREA_SQM', 'Library and Reading Room Area (m²)', librarySqm, `Library and Reading Room area ${librarySqm} sq.m`],
+    ]) {
+      await prisma.extractedField.create({
+        data: { documentId: planDoc.id, applicationId, fieldName, fieldLabel, fieldValue, originalExtractedValue: fieldValue, confidence: null, evidenceSnippet },
+      });
+    }
+  }
+
+  // Source-verification results covering every status the workspace distinguishes.
+  for (const v of [
+    { applicationId: app3.id, provider: 'STATE_FIRE_SERVICES_PORTAL', referenceId: 'NOC/FIRE/PUNE/2023/4471', status: 'EXPIRED', responseSummary: '[DEMO SIMULATION] Certificate genuine on the fire services portal; validity ended 2025-12-31.', evidenceReference: 'Fire NOC Archive 4471/2023' },
+    { applicationId: app4.id, provider: 'REGISTRAR_OF_SOCIETIES', referenceId: 'SOC-REG-2209/2001', status: 'MISMATCH_DETECTED', responseSummary: '[DEMO SIMULATION] Registry lists a different society name from the land title deed.', evidenceReference: 'Registrar of Societies record 2209/2001' },
+    { applicationId: app4.id, provider: 'BHU_NAKSHA_STATE_LAND_REGISTRY', referenceId: 'Survey-112/3', status: 'MANUAL_REVIEW_REQUIRED', responseSummary: '[DEMO SIMULATION] Title record found, but the owner name only partly matches the trust record.', evidenceReference: 'Survey Registry Vol 7, Page 18' },
+    { applicationId: app5.id, provider: 'MUNICIPAL_BUILDING_PORTAL', referenceId: 'NMC/BP/2020/771', status: 'SOURCE_UNAVAILABLE', responseSummary: '[DEMO SIMULATION] Municipal building portal did not respond after three attempts.', evidenceReference: 'No response received' },
+    { applicationId: app2.id, provider: 'AICTE_CENTRAL_PORTAL_DATABASE', referenceId: 'EOA-2025-26-MGT-2041', status: 'PENDING', responseSummary: '[DEMO SIMULATION] Request queued; awaiting previous-approval record.', evidenceReference: 'Pending' },
+  ] as const) {
+    await prisma.verificationRequest.create({ data: { ...v, isDemoSimulation: true, completedAt: v.status === 'PENDING' ? null : new Date() } });
+  }
+
   // Execute compliance evaluation on all applications to generate real findings
   const { evaluateApplicationCompliance } = await import('./rules/engine.js');
   const dbRules = await prisma.validationRule.findMany();
@@ -795,6 +833,7 @@ async function main() {
         },
       });
     }
+    await raiseAlerts(appId, alertsFromFindings(findings));
   }
 
   // 9. Initial Audit Trail Events
