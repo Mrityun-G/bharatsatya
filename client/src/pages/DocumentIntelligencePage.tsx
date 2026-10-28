@@ -37,6 +37,8 @@ const COMMON_FIELD_OPTIONS = [
   { key: 'PROGRAMME_NAME', label: 'Approved Academic Discipline / Programme' },
   { key: 'APPROVED_INTAKE', label: 'Approved Annual Student Intake' },
   { key: 'VALIDITY_STATUS', label: 'Statutory Approval / Certificate Validity Status' },
+  { key: 'LIBRARY_AREA_SQM', label: 'Library and Reading Room Area (m²)' },
+  { key: 'CLASSROOM_AREA_SQM', label: 'Total Classroom Area (m²)' },
 ];
 
 export const DocumentIntelligencePage: React.FC = () => {
