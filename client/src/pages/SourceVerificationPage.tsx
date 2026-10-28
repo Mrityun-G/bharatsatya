@@ -86,18 +86,21 @@ export const SourceVerificationPage: React.FC = () => {
       {error && <div className="notice-error" role="alert" style={{ marginBottom: '16px' }}>{error}</div>}
       {saved && <div className="notice-success" role="status">{saved}</div>}
 
-      <div className="status-register" role="group" aria-label="Filter by verification status">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
         {STATUS_INFO.map((s) => (
           <button
             key={s.key}
             type="button"
             onClick={() => setFilter('status', status === s.key ? 'ALL' : s.key)}
             aria-pressed={status === s.key}
-            className="status-register-item"
+            className="panel"
+            style={{ padding: '14px 16px', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '8px', outline: status === s.key ? '2px solid var(--gov-navy)' : undefined }}
           >
-            <span className="status-register-count">{counts[s.key] ?? 0}</span>
-            <StatusBadge status={s.key} />
-            <span className="status-register-meaning">{s.meaning}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <StatusBadge status={s.key} />
+              <span style={{ fontSize: '22px', fontWeight: 700, color: 'var(--gov-navy)' }}>{counts[s.key] ?? 0}</span>
+            </div>
+            <span style={{ fontSize: '12px', color: 'var(--gov-grey-muted)' }}>{s.meaning}</span>
           </button>
         ))}
       </div>

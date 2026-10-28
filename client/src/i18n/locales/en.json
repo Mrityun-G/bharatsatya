@@ -98,14 +98,7 @@
     "EXTRACTION_FAILED": "Extraction Failed",
     "EXTRACTED": "Extracted",
     "SOURCE_UNAVAILABLE": "Source Unavailable",
-    "MISMATCH_DETECTED": "Mismatch Detected",
-    "VERIFIED": "Verified",
-    "PENDING": "Pending",
-    "PENDING_VERIFICATION": "Verification Pending",
-    "SIMULATED": "Simulated",
-    "DEFICIENT": "Deficient",
-    "VALIDATED": "Validated",
-    "DEMO_METADATA_ONLY": "Metadata Only"
+    "MISMATCH_DETECTED": "Mismatch Detected"
   },
   "categories": {
     "ALL": "All Categories",
@@ -336,7 +329,7 @@
     "inactive": "INACTIVE"
   },
   "auth": {
-    "eyebrow": "AICTE approval processing",
+    "eyebrow": "AICTE REGULATION BUREAU",
     "heroTitle": "Every application. Every document. Every finding.",
     "heroSubtitle": "Validate institutional submissions, trace document evidence and support consistent regulatory scrutiny.",
     "feature1": "Documents and findings kept in context",
@@ -356,7 +349,7 @@
     "signingIn": "Signing in...",
     "demoNotice": "Frontend demo mode is enabled. Real authentication is not active in this build.",
     "devDemoLink": "Open development demo access",
-    "footer": "BharatSatya prototype · application validation and regulatory compliance decision-support · not an official AICTE system",
+    "footer": "BharatSatya | AICTE Regulation Bureau · Application Validation & Regulatory Compliance",
     "panelSubmissionsDesc": "Tamper-evident storage & cryptographic SHA-256 verification",
     "panelReviewDesc": "Deterministic statutory rules with pinpoint evidence citations",
     "panelDecisionsDesc": "Reviewer identity provenance & immutable audit trail",

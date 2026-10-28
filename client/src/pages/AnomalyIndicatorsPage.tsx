@@ -125,14 +125,14 @@ export const AnomalyIndicatorsPage: React.FC = () => {
           <div>No anomaly indicators{flags.length ? ' match these filters' : ' yet. Indicators appear after documents are uploaded and analysed'}.</div>
         </div>
       ) : (
-        <ol className="flag-list" aria-label="Anomaly indicators">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '14px' }}>
           {visible.map((f) => {
             const s = SEVERITY_STYLE[f.severity];
             return (
-              <li key={f.id} className={`flag-entry flag-${f.severity.toLowerCase()}`}>
+              <article key={f.id} className="panel" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '10px', minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'flex-start' }}>
-                  <h2 className="flag-title">{f.title}</h2>
-                  <span className="flag-severity" style={{ color: s.color }}>{s.label} severity</span>
+                  <h2 style={{ fontSize: '15px', margin: 0 }}>{f.title}</h2>
+                  <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', color: s.color, background: s.background, whiteSpace: 'nowrap' }}>{s.label}</span>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--gov-grey-muted)' }}>
                   <Link to={`/applications/${encodeURIComponent(f.applicationId)}`} style={{ fontWeight: 700 }}>{f.applicationId}</Link> · {f.institutionName}
@@ -147,10 +147,10 @@ export const AnomalyIndicatorsPage: React.FC = () => {
                   <Link className="btn btn-secondary btn-sm" to={`/applications/${encodeURIComponent(f.applicationId)}`}>Open application</Link>
                   <Link className="btn btn-secondary btn-sm" to={`/verifications?applicationId=${encodeURIComponent(f.applicationId)}`}>Verify at source</Link>
                 </div>
-              </li>
+              </article>
             );
           })}
-        </ol>
+        </div>
       )}
     </div>
   );
