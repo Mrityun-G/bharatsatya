@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
+import { AppFooter } from './components/AppFooter';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { DevDemoAccessPage } from './pages/DevDemoAccessPage';
@@ -46,6 +47,7 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         {navigationOpen && <button className="mobile-nav-scrim" aria-label="Close navigation" onClick={() => setNavigationOpen(false)} />}
         <main className="content-area">{children}</main>
       </div>
+      <AppFooter />
     </div>
   );
 };
