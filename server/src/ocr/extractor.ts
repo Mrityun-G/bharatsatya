@@ -30,8 +30,11 @@ export function fallbackExtractFields(text: string, documentType: DocumentType):
     confidence: null, evidencePage: 1, evidenceSnippet: snippet,
   });
   const match = (regex: RegExp) => regex.exec(text);
-  const name = match(/(?:Institution|College|Institute|Trust|Society)\s*(?:Name|of)?[:\-]?\s*([A-Za-z0-9\s.,&'\-]{5,80})/i);
-  if (name) add('INSTITUTION_NAME', 'Institution / Sponsoring Legal Entity Name', name[1].trim().split('\n')[0], name[0]);
+  // Prefer an explicit label; otherwise the whole proper-noun phrase around the keyword
+  // ("Vidya Jyothi Institute of Technology"), not just the word that follows it.
+  const name = match(/(?:Name\s+of\s+(?:the\s+)?(?:Institution|Institute|College|Society|Trust)|(?:Institution|Institute|College|Society|Trust|Establishment)\s+Name)\s*[:\-]\s*([^\n]{3,100})/i)
+    || /((?:[A-Z][A-Za-z.&'\-]*\s+){0,6}(?:Institute|College|University|Polytechnic|Academy|School|Society|Trust)(?:\s+(?:of|for)(?:\s+(?:[A-Z][A-Za-z.&'\-]*|and|&)){1,6})?)/.exec(text);
+  if (name) add('INSTITUTION_NAME', 'Institution / Sponsoring Legal Entity Name', name[1].trim().split('\n')[0].replace(/^[\s.,;:-]+|[\s.,;:-]+$/g, ''), name[0]);
   const ref = match(/(?:Reg(?:istration)?\s*(?:No|Number)|Certificate\s*No|Order\s*No|NOC\s*No|Ref\s*No)[:\-]?\s*([A-Z0-9/\-_]{4,35})/i);
   if (ref) add('REGISTRATION_REF_NO', 'Official Registration / Reference Order Number', ref[1].trim(), ref[0]);
   const expiry = match(/(?:Valid\s*(?:Up\s*To|Until|Upto|through)|Expiry\s*Date|Certificate\s*Valid\s*Till)[:\-]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4}|\d{4}-\d{2}-\d{2})/i);

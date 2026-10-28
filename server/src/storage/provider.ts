@@ -18,11 +18,15 @@ export const isSafeObjectKey = (key: string): boolean =>
 export class LocalPrivateDocumentStorage implements PrivateDocumentStorage {
   readonly provider = 'local' as const;
   private readonly root: string;
+  // Canonical form of root for comparing against realpath() results. They differ when the
+  // root goes through a symlink or a Windows 8.3 short name (C:\Users\ABCDEF~1\...).
+  private readonly realRoot: string;
 
   constructor(root = process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')) {
     this.root = path.resolve(root);
     fs.mkdirSync(this.root, { recursive: true, mode: 0o700 });
     try { fs.chmodSync(this.root, 0o700); } catch { /* Windows ACLs govern directory privacy there. */ }
+    this.realRoot = fs.realpathSync.native(this.root);
   }
 
   private resolve(key: string): string {
@@ -35,7 +39,7 @@ export class LocalPrivateDocumentStorage implements PrivateDocumentStorage {
 
   private async resolveExisting(key: string): Promise<string> {
     const resolved = await fs.promises.realpath(this.resolve(key));
-    if (!resolved.startsWith(`${this.root}${path.sep}`)) throw new Error('Invalid private document key.');
+    if (!resolved.startsWith(`${this.realRoot}${path.sep}`)) throw new Error('Invalid private document key.');
     const stat = await fs.promises.stat(resolved);
     if (!stat.isFile()) throw new Error('Private document object is not a file.');
     return resolved;

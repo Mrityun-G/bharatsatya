@@ -5,6 +5,7 @@ vi.mock('../prisma.js', () => ({ prisma: { application: { findUnique: mocks.appl
 import { analyzeDocumentBuffer, parsePdfDate } from '../forensics/analyzer.js';
 import { evaluateApplicationCompliance } from '../rules/engine.js';
 import { alertsFromFindings } from '../services/alerts.js';
+import { fallbackExtractFields } from '../ocr/extractor.js';
 
 const pdf = (body: string) => Buffer.from(`%PDF-1.4\n${body}\n%%EOF\n`, 'latin1');
 
@@ -79,5 +80,18 @@ describe('alerts from findings', () => {
     ]);
     expect(alerts.map((a) => a.type)).toEqual(['MISSING', 'EXPIRED']);
     expect(alerts[0].message).toContain('2 item(s)');
+  });
+});
+
+describe('institution name extraction (Node fallback)', () => {
+  const nameOf = (text: string) => fallbackExtractFields(text, 'FIRE_SAFETY_NOC').find((f) => f.fieldName === 'INSTITUTION_NAME')?.fieldValue;
+  it('keeps the full name on an unlabelled letterhead instead of the word after "Institute of"', () => {
+    expect(nameOf('Vidya Jyothi Institute of Technology\nFLOOR PLAN')).toBe('Vidya Jyothi Institute of Technology');
+    expect(nameOf('This is to certify that Kalinga Institute of Management Studies, Bhubaneswar')).toBe('Kalinga Institute of Management Studies');
+  });
+  it('prefers an explicit label and finds nothing when no name is present', () => {
+    expect(nameOf('Name of the Institution: Saraswati College of Pharmacy')).toBe('Saraswati College of Pharmacy');
+    expect(nameOf('Society Name: Vidya Jyothi Educational Society\nRegistered')).toBe('Vidya Jyothi Educational Society');
+    expect(nameOf('Certificate No: NOC/2026/01')).toBeUndefined();
   });
 });
