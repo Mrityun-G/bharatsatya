@@ -13,8 +13,6 @@ import {
   Check,
   LucideIcon,
   ShieldCheck,
-  FileCheck2,
-  UsersRound,
   AlertCircle,
   Loader2,
 } from 'lucide-react';
@@ -238,72 +236,37 @@ export const LoginPage: React.FC = () => {
         </div>
       </header>
 
-      {/* 3. Main Command Portal Workspace */}
-      <main className="portal-workspace">
-        <div className="portal-workspace-grid">
-          {/* Left Side: Regulatory Scope & Integrated Visual Showcase */}
-          <section className="portal-scope-pane" aria-labelledby="scope-title">
-            <div className="portal-scope-header">
-              <span className="portal-scope-eyebrow">
-                {t('auth.eyebrow', 'AICTE REGULATION BUREAU')}
-              </span>
-              <h1 id="scope-title" className="portal-scope-title">
-                {t('auth.heroTitle', 'Every application. Every document. Every finding.')}
-              </h1>
-              <p className="portal-scope-desc">
-                {t('auth.heroSubtitle', 'Validate institutional submissions, trace document evidence and support consistent regulatory scrutiny.')}
-              </p>
-            </div>
+      {/* 3. Introduction and sign-in */}
+      <main className="login-main">
+        <div className="login-grid">
+          <section aria-labelledby="scope-title">
+            <p className="login-kicker">{t('auth.eyebrow', 'AICTE approval processing')}</p>
+            <h1 id="scope-title" className="login-title">
+              {t('auth.heroTitle', 'Every application. Every document. Every finding.')}
+            </h1>
+            <p className="login-lede">
+              {t('auth.heroSubtitle', 'Validate institutional submissions, trace document evidence and support consistent regulatory scrutiny.')}
+            </p>
 
-            {/* Integrated Dossier & Principles Showcase */}
-            <div className="portal-composite-frame">
-              {/* Upper Portion: Campus Visual Window */}
-              <div className="portal-image-window">
-                <img
-                  src="/assets/institutional-campus.jpg"
-                  alt="National Technical Education Regulatory Infrastructure"
-                  className="portal-campus-photo"
-                />
-                <div className="portal-image-overlay" />
-                <div className="portal-image-caption">
-                  <span className="caption-dot" />
-                  <span>AICTE Institutional Regulatory & Scrutiny Infrastructure</span>
-                </div>
+            <dl className="login-principles" aria-label="Core regulatory principles">
+              <div>
+                <dt>{t('auth.panelSubmissions', 'Secure Submissions')}</dt>
+                <dd>{t('auth.panelSubmissionsDesc', 'Tamper-evident storage & cryptographic SHA-256 verification')}</dd>
               </div>
-
-              {/* Lower Portion: Attached Telemetry Principles Dock */}
-              <div className="portal-principles-dock" aria-label="Core regulatory principles">
-                <div className="portal-dock-cell">
-                  <div className="dock-cell-header">
-                    <ShieldCheck size={14} className="dock-icon dock-icon-saffron" />
-                    <span className="dock-cell-title">{t('auth.panelSubmissions', 'Secure Submissions')}</span>
-                  </div>
-                  <p className="dock-cell-desc">
-                    {t('auth.panelSubmissionsDesc', 'Tamper-evident storage & cryptographic SHA-256 verification')}
-                  </p>
-                </div>
-
-                <div className="portal-dock-cell">
-                  <div className="dock-cell-header">
-                    <FileCheck2 size={14} className="dock-icon dock-icon-blue" />
-                    <span className="dock-cell-title">{t('auth.panelReview', 'Transparent Review')}</span>
-                  </div>
-                  <p className="dock-cell-desc">
-                    {t('auth.panelReviewDesc', 'Deterministic statutory rules with pinpoint evidence citations')}
-                  </p>
-                </div>
-
-                <div className="portal-dock-cell">
-                  <div className="dock-cell-header">
-                    <UsersRound size={14} className="dock-icon dock-icon-green" />
-                    <span className="dock-cell-title">{t('auth.panelDecisions', 'Accountable Decisions')}</span>
-                  </div>
-                  <p className="dock-cell-desc">
-                    {t('auth.panelDecisionsDesc', 'Reviewer identity provenance & immutable audit trail')}
-                  </p>
-                </div>
+              <div>
+                <dt>{t('auth.panelReview', 'Transparent Review')}</dt>
+                <dd>{t('auth.panelReviewDesc', 'Deterministic statutory rules with pinpoint evidence citations')}</dd>
               </div>
-            </div>
+              <div>
+                <dt>{t('auth.panelDecisions', 'Accountable Decisions')}</dt>
+                <dd>{t('auth.panelDecisionsDesc', 'Reviewer identity provenance & immutable audit trail')}</dd>
+              </div>
+            </dl>
+
+            <figure className="login-figure">
+              <img src="/assets/institutional-campus.jpg" alt="Campus buildings of a technical institution" loading="lazy" />
+              <figcaption>Illustrative photograph by Kartik Saini (Unsplash). Not an AICTE facility.</figcaption>
+            </figure>
           </section>
 
           {/* Right Side: Compact Institutional Sign-In Panel */}
@@ -426,7 +389,7 @@ export const LoginPage: React.FC = () => {
         </div>
       </main>
 
-      {/* 4. Compact Institutional Footer */}
+      {/* 4. Footer */}
       <footer className="portal-footer">
         <span>{t('auth.footer', 'BharatSatya | AICTE Regulation Bureau · Application Validation & Regulatory Compliance')}</span>
       </footer>

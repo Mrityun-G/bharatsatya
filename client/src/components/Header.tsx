@@ -164,20 +164,6 @@ export const Header: React.FC<HeaderProps> = ({ navigationOpen, onMenuToggle }) 
             </Link>
           </div>
 
-          {/* Center: Portal Identity & Prototype Context */}
-          <div className="inst-portal-title">
-            <div className="portal-name-lockup">
-              <span className="portal-name">BharatSatya</span>
-              <span className="portal-separator">|</span>
-              <span className="portal-sub">Application Validation & Regulatory Compliance Decision-Support</span>
-            </div>
-            <div className="portal-badge-strip">
-              <span className="prototype-pill" title="Decision-support only · Human authority retained">
-                {t('header.prototypePill')}
-              </span>
-            </div>
-          </div>
-
           {/* Right: Controls & User Identity */}
           <div className="inst-controls">
             {isReviewer && <AlertsBell />}
@@ -327,6 +313,10 @@ export const Header: React.FC<HeaderProps> = ({ navigationOpen, onMenuToggle }) 
       {/* 3. Horizontal Administrative Navigation Ribbon */}
       <nav className="gov-navbar" aria-label="Regulatory Portal Navigation">
         <div className="gov-navbar-inner">
+          <Link to="/" className="app-wordmark" aria-label="BharatSatya home">
+            <strong>BharatSatya</strong>
+            <span>Application validation</span>
+          </Link>
           <ul className="gov-nav-list" role="menubar">
             {navItems.map((item) => (
               <li key={item.to} role="none" className="gov-nav-item">
