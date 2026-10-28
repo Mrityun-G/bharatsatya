@@ -1,0 +1,21 @@
+{
+  "name": "bharatsatya",
+  "version": "1.0.0",
+  "description": "BharatSatya - AI-assisted Application Validation and Regulatory Compliance Platform for AICTE",
+  "private": true,
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "test:server": "cd server && npm run test"
+  },
+  "keywords": [
+    "aicte",
+    "compliance",
+    "verification",
+    "ocr",
+    "validation"
+  ],
+  "author": "BharatSatya Engineering Team"
+}

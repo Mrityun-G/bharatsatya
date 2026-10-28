@@ -1,0 +1,27 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+server/.env
+client/.env
+
+# Local database files and generated Prisma artifacts
+*.db
+*.db-journal
+server/prisma/*.db
+
+# Private uploads and generated output
+server/uploads/
+uploads/
+server/dist/
+server/src/generated/prisma/
+client/dist/
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Local deployment/tool state
+.vercel/
+
+# Local tool logs
+logs/

@@ -1,0 +1,361 @@
+// BharatSatya Prisma Schema for PostgreSQL
+// Production Managed PostgreSQL (Neon, Supabase, AWS RDS)
+// SIH26261 · AI-Powered Application Validation, Document Authentication & Regulatory Compliance
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+enum UserRole {
+  APPLICANT
+  REVIEWER
+  ADMIN
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_AUTOMATED_REVIEW
+  DEFICIENCY_FLAGGED
+  CLARIFICATION_REQUESTED
+  VERIFIED_RECOMMENDED
+  REJECTED_NON_COMPLIANT
+  APPROVED
+}
+
+enum DocumentType {
+  LAND_TITLE_DEED
+  BUILDING_PLAN_APPROVAL
+  FIRE_SAFETY_NOC
+  OCCUPANCY_CERTIFICATE
+  SOCIETY_TRUST_REGISTRATION
+  FDR_FINANCIAL_ENDOWMENT
+  AICTE_PREVIOUS_EOA
+  FLOOR_PLAN
+  INFRASTRUCTURE_PHOTO
+}
+
+enum FindingStatus {
+  PASSED
+  MISSING
+  EXPIRED
+  MISMATCH
+  PENDING_VERIFICATION
+  MANUAL_REVIEW_REQUIRED
+}
+
+enum FindingSeverity {
+  CRITICAL
+  MAJOR
+  MINOR
+  INFO
+}
+
+enum VerificationStatus {
+  VERIFIED
+  MISMATCH_DETECTED
+  EXPIRED
+  PENDING
+  SOURCE_UNAVAILABLE
+  MANUAL_REVIEW_REQUIRED
+}
+
+enum ReviewActionType {
+  STATUS_CHANGE
+  CLARIFICATION_REQUEST
+  NOTE_ADDED
+  FINDING_OVERRIDE
+  FIELD_CORRECTED
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  passwordHash   String
+  googleSubject  String?        @unique
+  name           String
+  role           UserRole       @default(APPLICANT)
+  department     String?
+  designation    String?
+  institutionId  String?
+  institution    Institution?   @relation(fields: [institutionId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  assignedApps   Application[]  @relation("AssignedReviewer")
+  reviewActions  ReviewAction[]
+  auditEvents    AuditEvent[]
+  notifications  Notification[]
+  correctedFields ExtractedField[]
+  verificationRequests VerificationRequest[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Institution {
+  id               String        @id @default(uuid())
+  name             String
+  aictePermanentId String        @unique
+  address          String
+  state            String
+  district         String
+  pincode          String
+  contactEmail     String
+  contactPhone     String
+  establishedYear  Int
+  category         String        // ENGINEERING_TECH, MANAGEMENT, PHARMACY, ARCHITECTURE, POLYTECHNIC
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  applications     Application[]
+  users            User[]
+
+  @@index([aictePermanentId])
+}
+
+model Application {
+  id                   String                 @id // e.g. AICTE-2026-ENG-4821
+  institutionId        String
+  institution          Institution            @relation(fields: [institutionId], references: [id])
+  category             String                 // ENGINEERING_TECH, MANAGEMENT, etc.
+  academicYear         String                 @default("2026-2027")
+  status               ApplicationStatus      @default(SUBMITTED)
+  submissionDate       DateTime               @default(now())
+  lastEvaluatedAt      DateTime?
+  assignedReviewerId   String?
+  assignedReviewer     User?                  @relation("AssignedReviewer", fields: [assignedReviewerId], references: [id])
+  currentStage         String                 @default("Initial Intake Verification")
+  recommendedAction    String?
+  remarks              String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  documents            Document[]
+  extractedFields      ExtractedField[]
+  validationFindings   ValidationFinding[]
+  verificationRequests VerificationRequest[]
+  reviewActions        ReviewAction[]
+
+  @@index([institutionId])
+  @@index([status])
+  @@index([category])
+}
+
+model Document {
+  id                     String                 @id @default(uuid())
+  applicationId          String
+  application            Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentType           DocumentType
+  title                  String
+  fileName               String
+  originalName           String
+  mimeType               String
+  fileSizeBytes          Int
+  fileHashSha256         String
+  storagePath            String
+  uploadDate             DateTime               @default(now())
+  status                 String                 @default("UPLOADED")
+  isDuplicate            Boolean                @default(false)
+  duplicateOfDocumentId  String?
+  ocrConfidence          Float?
+  ocrRawText             String?
+  forensicsJson          String?   // Preliminary tamper/metadata indicators computed at upload
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  extractedFields        ExtractedField[]
+  validationFindings     ValidationFinding[]
+  verificationRequests   VerificationRequest[]
+
+  @@index([applicationId])
+  @@index([fileHashSha256])
+  @@index([documentType])
+}
+
+model ExtractedField {
+  id                     String      @id @default(uuid())
+  documentId             String
+  document               Document    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  applicationId          String
+  application            Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  fieldName              String      // INSTITUTION_NAME, LAND_AREA_ACRES, REGISTRATION_REF_NO, ISSUE_DATE, EXPIRY_DATE
+  fieldLabel             String
+  fieldValue             String
+  originalExtractedValue String
+  confidence             Float?
+  isCorrected            Boolean     @default(false)
+  correctedByUserId      String?
+  correctedByUser        User?       @relation(fields: [correctedByUserId], references: [id])
+  correctedAt            DateTime?
+  evidencePage           Int?        @default(1)
+  evidenceSnippet        String?
+  evidenceCoordinates    String?     // JSON coordinates
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+
+  @@index([documentId])
+  @@index([applicationId])
+  @@index([fieldName])
+}
+
+model ValidationRule {
+  id                      String                  @id @default(uuid())
+  code                    String                  @unique // e.g. RULE-APH-01
+  title                   String
+  description             String
+  category                String                  @default("ALL")
+  officialSourceReference String
+  isOfficial              Boolean                 @default(false) // Official status requires a verified source.
+  ruleType                String                  // MANDATORY_DOCUMENT, EXPIRY_CHECK, CROSS_DOCUMENT_CONSISTENCY, MINIMUM_THRESHOLD, DUPLICATE_CHECK
+  severity                FindingSeverity         @default(CRITICAL)
+  logicConfigJson         String
+  isActive                Boolean                 @default(true)
+  version                 Int                     @default(1)
+  effectiveDate           DateTime                @default(now())
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+
+  findings                ValidationFinding[]
+  versions                ValidationRuleVersion[]
+
+  @@index([code])
+  @@index([category])
+  @@index([isActive])
+}
+
+model ValidationRuleVersion {
+  id              String         @id @default(uuid())
+  ruleId          String
+  rule            ValidationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  version         Int
+  title           String
+  description     String
+  category        String?
+  officialSourceReference String?
+  isOfficial      Boolean?
+  ruleType        String?
+  severity        FindingSeverity?
+  isActive        Boolean?
+  logicConfigJson String
+  changedByUserId String?
+  changeReason    String?
+  createdAt       DateTime       @default(now())
+  findings        ValidationFinding[]
+
+  @@index([ruleId])
+  @@unique([ruleId, version])
+}
+
+model ValidationFinding {
+  id                    String          @id @default(uuid())
+  applicationId         String
+  application           Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  ruleId                String
+  rule                  ValidationRule  @relation(fields: [ruleId], references: [id])
+  ruleVersionId         String
+  ruleVersion           ValidationRuleVersion @relation(fields: [ruleVersionId], references: [id])
+  documentId            String?
+  document              Document?       @relation(fields: [documentId], references: [id])
+  status                FindingStatus
+  severity              FindingSeverity
+  title                 String
+  message               String
+  evidenceLocation      String?
+  evidenceSnippet       String?
+  evidenceComparisonJson String?
+  reviewerAcknowledged  Boolean         @default(false)
+  acknowledgedByUserId  String?
+  acknowledgedAt        DateTime?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([applicationId])
+  @@index([ruleId])
+  @@index([ruleVersionId])
+  @@index([status])
+}
+
+model VerificationRequest {
+  id                String             @id @default(uuid())
+  applicationId     String
+  application       Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  requestedByUserId String?
+  requestedBy       User?              @relation(fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  documentId        String?
+  document          Document?          @relation(fields: [documentId], references: [id])
+  provider          String             // BHU_NAKSHA_LAND_REGISTRY, STATE_FIRE_SERVICES_PORTAL, etc.
+  referenceId       String
+  requestedAt       DateTime           @default(now())
+  completedAt       DateTime?
+  status            VerificationStatus @default(PENDING)
+  responseSummary   String
+  evidenceReference String
+  rawResponseJson   String?
+  isDemoSimulation  Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+
+  @@index([applicationId])
+  @@index([provider])
+  @@index([requestedByUserId])
+}
+
+model ReviewAction {
+  id             String           @id @default(uuid())
+  applicationId  String
+  application    Application      @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewerId     String
+  reviewer       User             @relation(fields: [reviewerId], references: [id])
+  actionType     ReviewActionType
+  previousStatus String?
+  newStatus      String?
+  reason         String
+  notes          String?
+  createdAt      DateTime         @default(now())
+
+  @@index([applicationId])
+  @@index([reviewerId])
+}
+
+model AuditEvent {
+  id              String   @id @default(uuid())
+  actorId         String?
+  actor           User?    @relation(fields: [actorId], references: [id])
+  actorName       String
+  actorRole       String
+  action          String
+  entityType      String
+  entityId        String
+  beforeStateJson String?
+  afterStateJson  String?
+  ipAddress       String?  @default("127.0.0.1")
+  userAgent       String?  @default("BharatSatya-Agent/1.0")
+  createdAt       DateTime @default(now())
+
+  @@index([entityId])
+  @@index([entityType])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model Notification {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applicationId String?
+  title         String
+  message       String
+  type          String   @default("INFO")
+  isRead        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
