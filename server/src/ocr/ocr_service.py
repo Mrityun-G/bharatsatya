@@ -55,6 +55,16 @@ def get_field_coordinates(fitz_doc, page_num, search_term):
         pass
     return None
 
+INSTITUTION_LABEL_RE = re.compile(
+    r'(?:Name\s+of\s+(?:the\s+)?(?:Institution|Institute|College|Society|Trust)'
+    r'|(?:Institution|Institute|College|Society|Trust|Establishment)\s+Name)\s*[:\-]\s*([^\n]{3,100})',
+    re.IGNORECASE,
+)
+INSTITUTION_PHRASE_RE = re.compile(
+    r"((?:[A-Z][A-Za-z.&'\-]*\s+){0,6}(?:Institute|College|University|Polytechnic|Academy|School|Society|Trust)"
+    r"(?:\s+(?:of|for)(?:\s+(?:[A-Z][A-Za-z.&'\-]*|and|&)){1,6})?)"
+)
+
 def extract_fields_from_pages(page_data, doc_type, fitz_doc=None):
     """
     page_data: list of tuples (page_num, text, confidence)
@@ -68,13 +78,12 @@ def extract_fields_from_pages(page_data, doc_type, fitz_doc=None):
 
         # 1. Institution Name
         if 'INSTITUTION_NAME' not in found_field_names:
-            inst_match = re.search(
-                r'(?:Institution|Institute|College|Trust|Society|Establishment)\s*(?:Name|of)?[:\-]?\s*([A-Za-z0-9\s.,&\'\-]{5,80})',
-                text,
-                re.IGNORECASE
-            )
+            # Prefer an explicit label ("Institution Name: ..."); otherwise take the whole
+            # proper-noun phrase around the keyword ("Vidya Jyothi Institute of Technology"),
+            # not just the word after it.
+            inst_match = INSTITUTION_LABEL_RE.search(text) or INSTITUTION_PHRASE_RE.search(text)
             if inst_match:
-                val = inst_match.group(1).strip().split('\n')[0].strip()
+                val = inst_match.group(1).strip().split('\n')[0].strip(' .,;:-')
                 coords = get_field_coordinates(fitz_doc, page_num, val)
                 fields.append({
                     'fieldName': 'INSTITUTION_NAME',
